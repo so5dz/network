@@ -6,6 +6,8 @@ import (
 	"net"
 	"time"
 
+	"github.com/iskrapw/network/common"
+	"github.com/iskrapw/network/server"
 	"github.com/iskrapw/utils/misc"
 )
 
@@ -16,8 +18,8 @@ const _ProblemsBroadcastingError = "there were problems broadcasting message"
 type StreamServer struct {
 	operate                    bool
 	port                       int
-	onReceive                  func(Remote, []byte)
-	clients                    []*ConntectedClient
+	onReceive                  func(server.Remote, []byte)
+	clients                    []*RemoteClient
 	hasUnhandledDisconnections bool
 }
 
@@ -27,13 +29,13 @@ func (s *StreamServer) Initialize(port int) {
 
 func (s *StreamServer) Start() error {
 	s.hasUnhandledDisconnections = false
-	s.clients = make([]*ConntectedClient, 0, _ExpectedClients)
+	s.clients = make([]*RemoteClient, 0, _ExpectedClients)
 	s.operate = true
 
 	listenPath := fmt.Sprintf("0.0.0.0:%d", s.port)
 	listener, err := net.Listen("tcp", listenPath)
 	if err != nil {
-		return misc.WrapError(_ListenError, err)
+		return misc.WrapError(common.ListenError, err)
 	}
 
 	log.Println("Accepting connections on", listenPath)
@@ -44,17 +46,17 @@ func (s *StreamServer) Start() error {
 func (s *StreamServer) start(listener net.Listener) {
 	for s.operate {
 		tcpListener := listener.(*net.TCPListener)
-		tcpListener.SetDeadline(time.Now().Add(_AcceptDeadline))
+		tcpListener.SetDeadline(time.Now().Add(common.AcceptDeadline))
 
 		socket, err := listener.Accept()
-		if IsIOTimeoutError(err) {
+		if common.IsIOTimeoutError(err) {
 			continue
 		} else if err != nil {
 			log.Println("Failed to accept incoming connection on", listener.Addr(), "-", err)
 			continue
 		}
 
-		client := ConntectedClient{
+		client := RemoteClient{
 			connected: true,
 			socket:    socket,
 		}
@@ -95,18 +97,18 @@ func (s *StreamServer) Broadcast(data []byte) error {
 	return misc.WrapMultiple(_ProblemsBroadcastingError, errors)
 }
 
-func (s *StreamServer) OnReceive(callback func(Remote, []byte)) {
+func (s *StreamServer) OnReceive(callback func(server.Remote, []byte)) {
 	s.onReceive = callback
 }
 
-func (s *StreamServer) readLoop(c *ConntectedClient) {
+func (s *StreamServer) readLoop(c *RemoteClient) {
 	log.Println(c.Address(), "conntected")
 
-	buf := make([]byte, _ReadBufferSize)
+	buf := make([]byte, common.ReadBufferSize)
 	for s.operate && c.connected {
 		c.socket.SetReadDeadline(time.Now().Add(time.Second / 2))
 		n, err := c.socket.Read(buf)
-		if IsIOTimeoutError(err) {
+		if common.IsIOTimeoutError(err) {
 			continue
 		} else if err != nil {
 			log.Println("Disconnecting", c.Address(), "due to a read error", err)
@@ -119,7 +121,7 @@ func (s *StreamServer) readLoop(c *ConntectedClient) {
 }
 
 func (s *StreamServer) removeDisconnectedClients() {
-	connectedClients := make([]*ConntectedClient, 0, len(s.clients))
+	connectedClients := make([]*RemoteClient, 0, len(s.clients))
 	for _, c := range s.clients {
 		if c.connected {
 			connectedClients = append(connectedClients, c)

@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/iskrapw/network/common"
 	"github.com/iskrapw/utils/misc"
 )
 
@@ -32,9 +33,9 @@ func (c *MessageClient) Connect() error {
 	log.Println("Connecting to", connectPath)
 
 	var err error
-	c.socket, err = net.Dial(_TCPNetworkType, connectPath)
+	c.socket, err = net.Dial(common.TCPNetworkType, connectPath)
 	if err != nil {
-		return misc.WrapError(_DialError, err)
+		return misc.WrapError(common.DialError, err)
 	}
 
 	log.Println("Connected")
@@ -79,7 +80,7 @@ func (c *MessageClient) readLoop() error {
 		}
 	}
 
-	return misc.NewError(_OperationInterrupted)
+	return misc.NewError(common.OperationInterrupted)
 }
 
 func (c *MessageClient) sendHeader(dataLength int) error {
@@ -90,7 +91,7 @@ func (c *MessageClient) sendHeader(dataLength int) error {
 }
 
 func (c *MessageClient) readHeader() (int, error) {
-	headerBuffer, err := c.readExactNumberOfBytes(_MessageHeaderSize)
+	headerBuffer, err := c.readExactNumberOfBytes(common.MessageHeaderSize)
 	if err != nil {
 		return 0, err
 	}
@@ -102,15 +103,15 @@ func (c *MessageClient) readExactNumberOfBytes(bytesToRead int) ([]byte, error) 
 	totalBytesRead := 0
 
 	for totalBytesRead < bytesToRead {
-		c.socket.SetReadDeadline(time.Now().Add(_ReadDeadline))
+		c.socket.SetReadDeadline(time.Now().Add(common.ReadDeadline))
 		bytesRead, err := c.socket.Read(buffer[:])
-		if err != nil && !IsIOTimeoutError(err) {
+		if err != nil && !common.IsIOTimeoutError(err) {
 			return buffer, err
 		} else if (bytesRead > 0) && (c.onReceive != nil) {
 			totalBytesRead += bytesRead
 		}
 		if !c.operate {
-			return buffer, misc.NewError(_OperationInterrupted)
+			return buffer, misc.NewError(common.OperationInterrupted)
 		}
 	}
 

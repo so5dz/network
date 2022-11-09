@@ -7,14 +7,16 @@ import (
 	"net"
 	"time"
 
+	"github.com/iskrapw/network/common"
+	"github.com/iskrapw/network/server"
 	"github.com/iskrapw/utils/misc"
 )
 
 type MessageServer struct {
 	operate                    bool
 	port                       int
-	onReceive                  func(Remote, []byte)
-	clients                    []*ConntectedClient
+	onReceive                  func(server.Remote, []byte)
+	clients                    []*RemoteClient
 	hasUnhandledDisconnections bool
 }
 
@@ -24,13 +26,13 @@ func (s *MessageServer) Initialize(port int) {
 
 func (s *MessageServer) Start() error {
 	s.hasUnhandledDisconnections = false
-	s.clients = make([]*ConntectedClient, 0, _ExpectedClients)
+	s.clients = make([]*RemoteClient, 0, _ExpectedClients)
 	s.operate = true
 
 	listenPath := fmt.Sprintf("0.0.0.0:%d", s.port)
 	listener, err := net.Listen("tcp", listenPath)
 	if err != nil {
-		return misc.WrapError(_ListenError, err)
+		return misc.WrapError(common.ListenError, err)
 	}
 
 	log.Println("Accepting connections on", listenPath)
@@ -41,17 +43,17 @@ func (s *MessageServer) Start() error {
 func (s *MessageServer) start(listener net.Listener) {
 	for s.operate {
 		tcpListener := listener.(*net.TCPListener)
-		tcpListener.SetDeadline(time.Now().Add(_AcceptDeadline))
+		tcpListener.SetDeadline(time.Now().Add(common.AcceptDeadline))
 
 		socket, err := listener.Accept()
-		if IsIOTimeoutError(err) {
+		if common.IsIOTimeoutError(err) {
 			continue
 		} else if err != nil {
 			log.Println("Failed to accept incoming connection on", listener.Addr(), "-", err)
 			continue
 		}
 
-		client := ConntectedClient{
+		client := RemoteClient{
 			connected: true,
 			socket:    socket,
 		}
@@ -101,11 +103,11 @@ func (s *MessageServer) Broadcast(data []byte) error {
 	return misc.WrapMultiple(_ProblemsBroadcastingError, errors)
 }
 
-func (s *MessageServer) OnReceive(callback func(Remote, []byte)) {
+func (s *MessageServer) OnReceive(callback func(server.Remote, []byte)) {
 	s.onReceive = callback
 }
 
-func (server *MessageServer) readLoop(client *ConntectedClient) error {
+func (server *MessageServer) readLoop(client *RemoteClient) error {
 	for server.operate && client.connected {
 		dataLength, err := server.readHeader(client)
 		if err != nil {
@@ -122,38 +124,38 @@ func (server *MessageServer) readLoop(client *ConntectedClient) error {
 		}
 	}
 
-	return misc.NewError(_OperationInterrupted)
+	return misc.NewError(common.OperationInterrupted)
 }
 
-func sendHeader(client *ConntectedClient, dataLength int) error {
+func sendHeader(client *RemoteClient, dataLength int) error {
 	var header [4]byte
 	binary.BigEndian.PutUint32(header[:], uint32(dataLength))
 	return client.Send(header[:])
 }
 
-func (server *MessageServer) readHeader(client *ConntectedClient) (int, error) {
-	headerBuffer, err := server.readExactNumberOfBytes(client, _MessageHeaderSize)
+func (server *MessageServer) readHeader(client *RemoteClient) (int, error) {
+	headerBuffer, err := server.readExactNumberOfBytes(client, common.MessageHeaderSize)
 	if err != nil {
 		return 0, err
 	}
-	return int(binary.BigEndian.Uint32(headerBuffer[0:_MessageHeaderSize])), nil
+	return int(binary.BigEndian.Uint32(headerBuffer[0:common.MessageHeaderSize])), nil
 }
 
-func (server *MessageServer) readExactNumberOfBytes(client *ConntectedClient, bytesToRead int) ([]byte, error) {
+func (server *MessageServer) readExactNumberOfBytes(client *RemoteClient, bytesToRead int) ([]byte, error) {
 	buffer := make([]byte, bytesToRead)
 	totalBytesRead := 0
 
 	for totalBytesRead < bytesToRead {
-		client.socket.SetReadDeadline(time.Now().Add(_ReadDeadline))
+		client.socket.SetReadDeadline(time.Now().Add(common.ReadDeadline))
 		bytesRead, err := client.socket.Read(buffer[totalBytesRead:bytesToRead])
 		totalBytesRead += bytesRead
 
-		if err != nil && !IsIOTimeoutError(err) {
+		if err != nil && !common.IsIOTimeoutError(err) {
 			return buffer, err
 		}
 
 		if !server.operate {
-			return buffer, misc.NewError(_OperationInterrupted)
+			return buffer, misc.NewError(common.OperationInterrupted)
 		}
 	}
 
@@ -161,7 +163,7 @@ func (server *MessageServer) readExactNumberOfBytes(client *ConntectedClient, by
 }
 
 func (s *MessageServer) removeDisconnectedClients() {
-	connectedClients := make([]*ConntectedClient, 0, len(s.clients))
+	connectedClients := make([]*RemoteClient, 0, len(s.clients))
 	for _, c := range s.clients {
 		if c.connected {
 			connectedClients = append(connectedClients, c)

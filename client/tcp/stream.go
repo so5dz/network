@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/iskrapw/network/common"
 	"github.com/iskrapw/utils/misc"
 )
 
@@ -28,12 +29,12 @@ func (c *StreamClient) Connect() error {
 	log.Println("Connecting to", connectPath)
 
 	var err error
-	c.socket, err = net.Dial(_TCPNetworkType, connectPath)
+	c.socket, err = net.Dial(common.TCPNetworkType, connectPath)
 	if err != nil {
-		return misc.WrapError(_DialError, err)
+		return misc.WrapError(common.DialError, err)
 	}
 
-	log.Println("Connected")
+	log.Println("Connected to", connectPath)
 
 	c.operate = true
 	go c.readLoop()
@@ -55,11 +56,11 @@ func (c *StreamClient) Send(data []byte) error {
 }
 
 func (c *StreamClient) readLoop() {
-	buf := make([]byte, _ReadBufferSize)
+	buf := make([]byte, common.ReadBufferSize)
 	for c.operate {
-		c.socket.SetReadDeadline(time.Now().Add(_ReadDeadline))
+		c.socket.SetReadDeadline(time.Now().Add(common.ReadDeadline))
 		n, err := c.socket.Read(buf)
-		if IsIOTimeoutError(err) {
+		if common.IsIOTimeoutError(err) {
 			return
 		} else if err != nil {
 			log.Println("Disconnecting from server due to a read error", err)
