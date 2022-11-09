@@ -1,4 +1,4 @@
-module github.com/iskrapw/connections
+module github.com/iskrapw/network
 
 go 1.18
 
