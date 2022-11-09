@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	utils "github.com/iskrapw/utils/src"
+	"github.com/iskrapw/utils/misc"
 )
 
 const _ExpectedClients = 8
@@ -33,7 +33,7 @@ func (s *StreamServer) Start() error {
 	listenPath := fmt.Sprintf("0.0.0.0:%d", s.port)
 	listener, err := net.Listen("tcp", listenPath)
 	if err != nil {
-		return utils.WrapError(_ListenError, err)
+		return misc.WrapError(_ListenError, err)
 	}
 
 	log.Println("Accepting connections on", listenPath)
@@ -75,7 +75,7 @@ func (s *StreamServer) Stop() error {
 		}
 	}
 	s.clients = s.clients[0:0]
-	return utils.WrapMultiple(_ProblemsClosingServerError, errors)
+	return misc.WrapMultiple(_ProblemsClosingServerError, errors)
 }
 
 func (s *StreamServer) Broadcast(data []byte) error {
@@ -92,7 +92,7 @@ func (s *StreamServer) Broadcast(data []byte) error {
 	}
 
 	s.removeDisconnectedClients()
-	return utils.WrapMultiple(_ProblemsBroadcastingError, errors)
+	return misc.WrapMultiple(_ProblemsBroadcastingError, errors)
 }
 
 func (s *StreamServer) OnReceive(callback func(Remote, []byte)) {

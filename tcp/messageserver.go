@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	utils "github.com/iskrapw/utils/src"
+	"github.com/iskrapw/utils/misc"
 )
 
 type MessageServer struct {
@@ -30,7 +30,7 @@ func (s *MessageServer) Start() error {
 	listenPath := fmt.Sprintf("0.0.0.0:%d", s.port)
 	listener, err := net.Listen("tcp", listenPath)
 	if err != nil {
-		return utils.WrapError(_ListenError, err)
+		return misc.WrapError(_ListenError, err)
 	}
 
 	log.Println("Accepting connections on", listenPath)
@@ -72,7 +72,7 @@ func (s *MessageServer) Stop() error {
 		}
 	}
 	s.clients = s.clients[0:0]
-	return utils.WrapMultiple(_ProblemsClosingServerError, errors)
+	return misc.WrapMultiple(_ProblemsClosingServerError, errors)
 }
 
 func (s *MessageServer) Broadcast(data []byte) error {
@@ -98,7 +98,7 @@ func (s *MessageServer) Broadcast(data []byte) error {
 	}
 
 	s.removeDisconnectedClients()
-	return utils.WrapMultiple(_ProblemsBroadcastingError, errors)
+	return misc.WrapMultiple(_ProblemsBroadcastingError, errors)
 }
 
 func (s *MessageServer) OnReceive(callback func(Remote, []byte)) {
@@ -122,7 +122,7 @@ func (server *MessageServer) readLoop(client *ConntectedClient) error {
 		}
 	}
 
-	return utils.NewError(_OperationInterrupted)
+	return misc.NewError(_OperationInterrupted)
 }
 
 func sendHeader(client *ConntectedClient, dataLength int) error {
@@ -153,7 +153,7 @@ func (server *MessageServer) readExactNumberOfBytes(client *ConntectedClient, by
 		}
 
 		if !server.operate {
-			return buffer, utils.NewError(_OperationInterrupted)
+			return buffer, misc.NewError(_OperationInterrupted)
 		}
 	}
 

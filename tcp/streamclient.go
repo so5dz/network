@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	utils "github.com/iskrapw/utils/src"
+	"github.com/iskrapw/utils/misc"
 )
 
 type StreamClient struct {
@@ -30,7 +30,7 @@ func (c *StreamClient) Connect() error {
 	var err error
 	c.socket, err = net.Dial(_TCPNetworkType, connectPath)
 	if err != nil {
-		return utils.WrapError(_DialError, err)
+		return misc.WrapError(_DialError, err)
 	}
 
 	log.Println("Connected")

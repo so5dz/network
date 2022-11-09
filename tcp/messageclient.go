@@ -7,7 +7,7 @@ import (
 	"net"
 	"time"
 
-	utils "github.com/iskrapw/utils/src"
+	"github.com/iskrapw/utils/misc"
 )
 
 type MessageClient struct {
@@ -34,7 +34,7 @@ func (c *MessageClient) Connect() error {
 	var err error
 	c.socket, err = net.Dial(_TCPNetworkType, connectPath)
 	if err != nil {
-		return utils.WrapError(_DialError, err)
+		return misc.WrapError(_DialError, err)
 	}
 
 	log.Println("Connected")
@@ -79,7 +79,7 @@ func (c *MessageClient) readLoop() error {
 		}
 	}
 
-	return utils.NewError(_OperationInterrupted)
+	return misc.NewError(_OperationInterrupted)
 }
 
 func (c *MessageClient) sendHeader(dataLength int) error {
@@ -110,7 +110,7 @@ func (c *MessageClient) readExactNumberOfBytes(bytesToRead int) ([]byte, error) 
 			totalBytesRead += bytesRead
 		}
 		if !c.operate {
-			return buffer, utils.NewError(_OperationInterrupted)
+			return buffer, misc.NewError(_OperationInterrupted)
 		}
 	}
 
