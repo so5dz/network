@@ -1,5 +1,5 @@
-module github.com/iskrapw/network
+module github.com/so5dz/network
 
 go 1.18
 
-require github.com/iskrapw/utils v0.1.0
+require github.com/so5dz/utils v0.1.0

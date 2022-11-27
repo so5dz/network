@@ -6,8 +6,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/iskrapw/network/common"
-	"github.com/iskrapw/utils/misc"
+	"github.com/so5dz/network/common"
+	"github.com/so5dz/utils/misc"
 )
 
 type StreamClient struct {

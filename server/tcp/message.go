@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/iskrapw/network/common"
-	"github.com/iskrapw/network/server"
-	"github.com/iskrapw/utils/misc"
+	"github.com/so5dz/network/common"
+	"github.com/so5dz/network/server"
+	"github.com/so5dz/utils/misc"
 )
 
 type MessageServer struct {
