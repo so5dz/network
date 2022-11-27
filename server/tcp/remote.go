@@ -1,6 +1,12 @@
 package tcp
 
-import "net"
+import (
+	"net"
+
+	"github.com/so5dz/utils/misc"
+)
+
+const _SendWriteError = "error sending message"
 
 type RemoteClient struct {
 	connected bool
@@ -18,5 +24,8 @@ func (rc *RemoteClient) Disconnect() error {
 
 func (rc *RemoteClient) Send(data []byte) error {
 	_, err := rc.socket.Write(data)
-	return err
+	if err != nil {
+		return misc.WrapError(_SendWriteError, err)
+	}
+	return nil
 }

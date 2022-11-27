@@ -10,6 +10,8 @@ import (
 	"github.com/so5dz/utils/misc"
 )
 
+const _SendWriteError = "error sending message"
+
 type StreamClient struct {
 	host      string
 	port      int
@@ -52,7 +54,10 @@ func (c *StreamClient) OnReceive(callback func([]byte)) {
 
 func (c *StreamClient) Send(data []byte) error {
 	_, err := c.socket.Write(data)
-	return err
+	if err != nil {
+		return misc.WrapError(_SendWriteError, err)
+	}
+	return nil
 }
 
 func (c *StreamClient) readLoop() {
