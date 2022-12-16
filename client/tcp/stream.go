@@ -66,7 +66,7 @@ func (c *StreamClient) readLoop() {
 		c.socket.SetReadDeadline(time.Now().Add(common.ReadDeadline))
 		n, err := c.socket.Read(buf)
 		if common.IsIOTimeoutError(err) {
-			return
+			continue
 		} else if err != nil {
 			log.Println("Disconnecting from server due to a read error", err)
 			return
